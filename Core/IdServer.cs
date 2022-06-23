@@ -1,17 +1,19 @@
 ﻿using System.Collections.Generic;
+using DI.TokenService.Store;
 using IdentityServer4;
 using IdentityServer4.Models;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace DI.TokenService.Core
 {
     public class IdServer
     {
-        private readonly IIdentityServerBuilder _builder;
-
-        private IdServer(IServiceCollection serviceCollection)
+        public static void Start(IServiceCollection serviceCollection, IConfiguration configuration)
         {
-            _builder = serviceCollection.AddIdentityServer(options =>
+            serviceCollection.AddSingleton<DapperContext>();
+
+            var builder = serviceCollection.AddIdentityServer(options =>
             {
                 options.Events.RaiseErrorEvents = true;
                 options.Events.RaiseInformationEvents = true;
@@ -19,100 +21,56 @@ namespace DI.TokenService.Core
                 options.Events.RaiseSuccessEvents = true;
                 options.EmitStaticAudienceClaim = true;
             });
-        }
-
-        private IdServer AddIdentityResources()
-        {
-            var resources = new List<IdentityResource>
+            builder.AddDeveloperSigningCredential();
+            builder.AddInMemoryIdentityResources(new List<IdentityResource>
             {
                 new IdentityResources.OpenId(),
                 new IdentityResources.Profile()
-            };
-            _builder.AddInMemoryIdentityResources(resources);
-
-            return this;
-        }
-
-        private IdServer AddApiResources()
-        {
-            var apiResources = new List<ApiResource>
+            });
+            builder.AddInMemoryApiResources(new List<ApiResource>
             {
                 new("boardsapi") {Scopes = {"boardsapi"}}
-            };
-
-            _builder.AddInMemoryApiResources(apiResources);
-
-            return this;
-        }
-
-        private IdServer AddApiScopes()
-        {
-            var apiScopes = new List<ApiScope>
+            });
+            builder.AddInMemoryApiScopes(new List<ApiScope>
             {
                 new("boardsapi", "DOTARS Boards API")
-            };
-
-            _builder.AddInMemoryApiScopes(apiScopes);
-            return this;
-        }
+            });
 
 
-        private IdServer AddClients()
-        {
-            var clients = new List<Client>();
-            clients.Add(new Client
+            //-- clients
+
+            var clientUri = configuration["Client:ClientUri"];
+            var clients = new List<Client>
             {
-                ClientId = "dotars_boards",
-                ClientName = "DOTARS Boards Application",
-                ClientUri = "http://localhost:4200",
-
-                AllowedGrantTypes = GrantTypes.Implicit,
-                //ClientSecrets =
-                //{
-                //    new Secret("dotars".Sha256())
-                //},
-
-                RequireClientSecret = false,
-                RedirectUris = { "http://localhost:4200/login_complete" },
-                PostLogoutRedirectUris = { "http://localhost:4200/logout" },
-                AllowedCorsOrigins = { "http://localhost:4200" },
-                AllowedScopes = new List<string>
+                new Client
+                {
+                    ClientId = configuration["Client:ClientId"],
+                    ClientName = configuration["Client:ClientName"],
+                    ClientUri =clientUri,
+                    AllowedGrantTypes = GrantTypes.Implicit,
+                    //ClientSecrets =
+                    //{
+                    //    new Secret("dotars".Sha256())
+                    //},
+                    RequireConsent=false,
+                    RequireClientSecret = false,
+                    RedirectUris = { $"{clientUri}/{configuration["Client:RedirectUri"]}" },
+                    PostLogoutRedirectUris = { $"{clientUri}/{configuration["Client:PostLogoutRedirectUri"]}" },
+                    AllowedCorsOrigins = { clientUri},
+                    AllowedScopes = new List<string>
                 {
                     IdentityServerConstants.StandardScopes.OpenId,
                     IdentityServerConstants.StandardScopes.Profile,
                     "boardsapi"
                 },
-                AllowAccessTokensViaBrowser = true
-            });
-            _builder.AddInMemoryClients(clients);
-            return this;
-        }
-
-        private IdServer AddUsers()
-        {
-            _builder.AddTestUsers(TestUsers.Users);
-            return this;
-        }
-
-        private IdServer AddCredentials()
-        {
-            _builder.AddDeveloperSigningCredential();
-            return this;
-        }
-
-        public static IdServer Start(IServiceCollection serviceCollection)
-        {
-            var idServer = new IdServer(serviceCollection);
-
-            idServer.AddIdentityResources();
-            idServer.AddApiResources();
-            idServer.AddClients();
-            idServer.AddApiScopes();
-            idServer.AddUsers();
-            idServer.AddCredentials();
-
-
-            return idServer;
+                   AllowAccessTokensViaBrowser = true
+                }
+            };
+            builder.AddInMemoryClients(clients);
+            //--users
+            builder.Services.AddSingleton<IUserRepository, UserRepository>();
+            builder.AddProfileService<CustomProfileService>();
+            builder.AddResourceOwnerValidator<CustomRopValidator>();
         }
     }
 }

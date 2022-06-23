@@ -39,7 +39,7 @@ namespace DI.TokenService
             //});
 
 
-            services.StartIdServer();
+            services.StartIdServer(Configuration);
 
         }
 

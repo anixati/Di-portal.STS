@@ -4,6 +4,7 @@ using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using DI.TokenService.Core;
+using DI.TokenService.Store;
 using IdentityModel;
 using IdentityServer4;
 using IdentityServer4.Events;
@@ -26,23 +27,21 @@ namespace DI.TokenService.Controllers
         private readonly IEventService _events;
         private readonly IIdentityServerInteractionService _interaction;
         private readonly ILogger<ExternalController> _logger;
-        private readonly TestUserStore _users;
+
+        private readonly IUserRepository _userRepo;
+
 
         public ExternalController(
             IIdentityServerInteractionService interaction,
             IClientStore clientStore,
             IEventService events,
-            ILogger<ExternalController> logger,
-            TestUserStore users = null)
+            ILogger<ExternalController> logger, IUserRepository userRepo)
         {
-            // if the TestUserStore is not in DI, then we'll just use the global users collection
-            // this is where you would plug in your own custom identity management library (e.g. ASP.NET Identity)
-            _users = users ?? new TestUserStore(TestUsers.Users);
-
             _interaction = interaction;
             _clientStore = clientStore;
             _logger = logger;
             _events = events;
+            _userRepo = userRepo;
         }
 
         /// <summary>
@@ -105,9 +104,9 @@ namespace DI.TokenService.Controllers
             ProcessLoginCallback(result, additionalLocalClaims, localSignInProps);
 
             // issue authentication cookie for user
-            var isuser = new IdentityServerUser(user.SubjectId)
+            var isuser = new IdentityServerUser($"{user.Id}")
             {
-                DisplayName = user.Username,
+                DisplayName = user.UserId,
                 IdentityProvider = provider,
                 AdditionalClaims = additionalLocalClaims
             };
@@ -122,7 +121,7 @@ namespace DI.TokenService.Controllers
 
             // check if external login is in the context of an OIDC request
             var context = await _interaction.GetAuthorizationContextAsync(returnUrl);
-            await _events.RaiseAsync(new UserLoginSuccessEvent(provider, providerUserId, user.SubjectId, user.Username,
+            await _events.RaiseAsync(new UserLoginSuccessEvent(provider, providerUserId, $"{user.Id}", user.UserId,
                 true, context?.Client.ClientId));
 
             if (context != null)
@@ -134,7 +133,7 @@ namespace DI.TokenService.Controllers
             return Redirect(returnUrl);
         }
 
-        private (TestUser user, string provider, string providerUserId, IEnumerable<Claim> claims)
+        private (CustomUser user, string provider, string providerUserId, IEnumerable<Claim> claims)
             FindUserFromExternalProvider(AuthenticateResult result)
         {
             var externalUser = result.Principal;
@@ -154,14 +153,14 @@ namespace DI.TokenService.Controllers
             var providerUserId = userIdClaim.Value;
 
             // find external user
-            var user = _users.FindByExternalProvider(provider, providerUserId);
+            var user = _userRepo.FindByExternalProvider(provider, providerUserId);
 
             return (user, provider, providerUserId, claims);
         }
 
-        private TestUser AutoProvisionUser(string provider, string providerUserId, IEnumerable<Claim> claims)
+        private CustomUser AutoProvisionUser(string provider, string providerUserId, IEnumerable<Claim> claims)
         {
-            var user = _users.AutoProvisionUser(provider, providerUserId, claims.ToList());
+            var user = _userRepo.AutoProvisionUser(provider, providerUserId, claims.ToList());
             return user;
         }
 

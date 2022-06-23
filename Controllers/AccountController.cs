@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using DI.TokenService.Core;
 using DI.TokenService.Models;
+using DI.TokenService.Store;
 using IdentityModel;
 using IdentityServer4;
 using IdentityServer4.Events;
@@ -26,44 +27,30 @@ namespace DI.TokenService.Controllers
         private readonly IEventService _events;
         private readonly IIdentityServerInteractionService _interaction;
         private readonly IAuthenticationSchemeProvider _schemeProvider;
-        private readonly TestUserStore _users;
+        private readonly IUserRepository _userRepo;
 
         public AccountController(
             IIdentityServerInteractionService interaction,
             IClientStore clientStore,
             IAuthenticationSchemeProvider schemeProvider,
-            IEventService events,
-            TestUserStore users = null)
+            IEventService events, IUserRepository userRepo)
         {
-            // if the TestUserStore is not in DI, then we'll just use the global users collection
-            // this is where you would plug in your own custom identity management library (e.g. ASP.NET Identity)
-            _users = users ?? new TestUserStore(TestUsers.Users);
-
             _interaction = interaction;
             _clientStore = clientStore;
             _schemeProvider = schemeProvider;
             _events = events;
+            _userRepo = userRepo;
         }
 
-        /// <summary>
-        ///     Entry point into the login workflow
-        /// </summary>
         [HttpGet]
         public async Task<IActionResult> Login(string returnUrl)
         {
-            // build a model so we know what to show on the login page
             var vm = await BuildLoginViewModelAsync(returnUrl);
-
             if (vm.IsExternalLoginOnly)
-                // we only have one option for logging in and it's an external provider
                 return RedirectToAction("Challenge", "External", new {scheme = vm.ExternalLoginScheme, returnUrl});
-
             return View(vm);
         }
 
-        /// <summary>
-        ///     Handle postback from username/password login
-        /// </summary>
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Login(LoginInputModel model, string button)
@@ -97,10 +84,10 @@ namespace DI.TokenService.Controllers
             if (ModelState.IsValid)
             {
                 // validate username/password against in-memory store
-                if (_users.ValidateCredentials(model.Username, model.Password))
+                if (await _userRepo.ValidateCredentials(model.Username, model.Password))
                 {
-                    var user = _users.FindByUsername(model.Username);
-                    await _events.RaiseAsync(new UserLoginSuccessEvent(user.Username, user.SubjectId, user.Username,
+                    var user = await _userRepo.FindByUsername(model.Username);
+                    await _events.RaiseAsync(new UserLoginSuccessEvent(user.UserId, $"{user.Id}", user.UserId,
                         clientId: context?.Client.ClientId));
 
                     // only set explicit expiration here if user chooses "remember me". 
@@ -115,9 +102,9 @@ namespace DI.TokenService.Controllers
                     ;
 
                     // issue authentication cookie with subject ID and username
-                    var isuser = new IdentityServerUser(user.SubjectId)
+                    var isuser = new IdentityServerUser($"{user.Id}")
                     {
-                        DisplayName = user.Username
+                        DisplayName = user.DisplayName
                     };
 
                     await HttpContext.SignInAsync(isuser, props);
