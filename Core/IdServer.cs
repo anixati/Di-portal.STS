@@ -56,7 +56,7 @@ namespace DI.TokenService.Core
                     RequireClientSecret = false,
                     RedirectUris = { $"{clientUri}/{configuration["Client:RedirectUri"]}" },
                     PostLogoutRedirectUris = { $"{clientUri}/{configuration["Client:PostLogoutRedirectUri"]}" },
-                    AllowedCorsOrigins = { clientUri},
+                    AllowedCorsOrigins = {clientUri},
                     AllowedScopes = new List<string>
                 {
                     IdentityServerConstants.StandardScopes.OpenId,

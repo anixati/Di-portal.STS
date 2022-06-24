@@ -1,6 +1,9 @@
 using System;
+using System.IO;
+using System.Reflection;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Serilog;
@@ -41,11 +44,15 @@ namespace DI.TokenService
 
         public static void SetupLogger()
         {
+            var path = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+            var _config = new ConfigurationBuilder()
+                .SetBasePath(path)
+                .AddJsonFile("logSettings.json")
+                .Build();
+
             Log.Logger = new LoggerConfiguration()
-                .MinimumLevel.Debug()
-                .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
+                .ReadFrom.Configuration(_config)
                 .Enrich.FromLogContext()
-                .WriteTo.Console()
                 .CreateLogger();
         }
 

@@ -23,22 +23,28 @@ namespace DI.TokenService
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddControllersWithViews();
-           
-            //services.AddCors(options =>
-            //{
-            //    options.AddPolicy("IdentityServer", policy =>
-            //    {
-            //        policy
-            //          .WithOrigins("http://localhost:3000")
-            //          .SetIsOriginAllowedToAllowWildcardSubdomains()
-            //          .AllowAnyHeader()
-            //          .AllowAnyMethod();
-            //    });
 
-            //    options.DefaultPolicyName = "IdentityServer";
-            //});
+            services.AddCors(options =>
+            {
+                options.AddPolicy("IdentityServer", policy =>
+                    {
+                        policy
+                       .AllowAnyOrigin()
+                       .SetIsOriginAllowedToAllowWildcardSubdomains()
+                          .AllowAnyHeader()
+                          .AllowAnyMethod();
+                    });
+                options.DefaultPolicyName = "IdentityServer";
+            });
 
-
+            services.AddSingleton<ICorsPolicyService>((container) =>
+            {
+                var logger = container.GetRequiredService<ILogger<DefaultCorsPolicyService>>();
+                return new DefaultCorsPolicyService(logger)
+                {
+                    AllowAll = true
+                };
+            });
             services.StartIdServer(Configuration);
 
         }
@@ -54,22 +60,26 @@ namespace DI.TokenService
                 app.UseExceptionHandler("/Home/Error");
                 app.UseHsts();
             }
-            //app.UseCors("IdentityServer");
+            app.UseCors("IdentityServer");
 
             app.UseHttpsRedirection();
             app.UseStaticFiles();
             app.UseRouting();
-            
+
             app.UseAuthorization();
             app.UseIdServer();
 
 
             app.UseCookiePolicy(new CookiePolicyOptions
             {
-                HttpOnly = HttpOnlyPolicy.None,
-                MinimumSameSitePolicy = SameSiteMode.None,
-                Secure = CookieSecurePolicy.Always
+                MinimumSameSitePolicy = SameSiteMode.Lax
             });
+            //app.UseCookiePolicy(new CookiePolicyOptions
+            //{
+            //    HttpOnly = HttpOnlyPolicy.None,
+            //    MinimumSameSitePolicy = SameSiteMode.None,
+            //    Secure = CookieSecurePolicy.Always
+            //});
 
             app.UseEndpoints(endpoints =>
             {
