@@ -53,15 +53,16 @@ namespace DI.TokenService.Store
             {
                  new Claim("nickname", user.DisplayName),
                 new Claim(JwtClaimTypes.Subject, $"{user.Id}"),
+                  new Claim(ClaimTypes.Sid, $"{user.Id}"),
                 new Claim(JwtClaimTypes.Id, user.UserId),
                 new Claim(ClaimTypes.Email, user.Email),
                 new Claim(ClaimTypes.Name, user.DisplayName),
             };
 
             //role claim
-           // var values = new {userid=user.UserId};
+            // var values = new {userid=user.UserId};
             using var connection = _context.CreateConnection();
-            var roles =await connection.QueryAsync<string>("[acl].[GetUserRoles]", new { userId = user.UserId },commandType:System.Data.CommandType.StoredProcedure);
+            var roles = await connection.QueryAsync<string>("[acl].[GetUserRoles]", new { userId = user.UserId }, commandType: System.Data.CommandType.StoredProcedure);
             if (roles.Any())
             {
                 var rc = string.Join('|', roles.ToArray());
@@ -69,7 +70,7 @@ namespace DI.TokenService.Store
                 claims.Add(new Claim("rst", "0"));
             }
             else
-                { claims.Add(new Claim("rst", "1")); }
+            { claims.Add(new Claim("rst", "1")); }
             return claims;
         }
 
@@ -77,7 +78,7 @@ namespace DI.TokenService.Store
         {
             var user = await FindByUsername(username);
             if (user != null)
-                return BCrypt.Net.BCrypt.Verify(password,user.PasswordHash);
+                return BCrypt.Net.BCrypt.Verify(password, user.PasswordHash);
             return false;
         }
     }
