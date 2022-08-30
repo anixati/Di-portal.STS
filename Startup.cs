@@ -1,3 +1,6 @@
+using System.Net;
+using System.Net.Http;
+using System.Net.Security;
 using DI.TokenService.Core;
 using IdentityServer4.Services;
 using Microsoft.AspNetCore.Builder;
@@ -22,6 +25,21 @@ namespace DI.TokenService
 
         public void ConfigureServices(IServiceCollection services)
         {
+
+
+            ServicePointManager.ServerCertificateValidationCallback += (sender, certificate, chain, errors) =>
+            {
+                // local dev, just approve all certs
+                return true;
+               // return errors == SslPolicyErrors.None;
+            };
+
+            services.AddHttpClient("HttpClientWithSSLUntrusted").ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
+            {
+                ClientCertificateOptions = ClientCertificateOption.Manual,
+                ServerCertificateCustomValidationCallback =
+                    (httpRequestMessage, cert, cetChain, policyErrors) => true
+            });
             services.AddControllersWithViews();
 
             services.AddCors(options =>
@@ -45,12 +63,27 @@ namespace DI.TokenService
                     AllowAll = true
                 };
             });
+
+
+            services.Configure<CookiePolicyOptions>(options =>
+            {
+             //   options.Secure = CookieSecurePolicy.Always;
+             options.CheckConsentNeeded = context => true;
+             options.MinimumSameSitePolicy = SameSiteMode.None;
+            });
+
             services.StartIdServer(Configuration);
 
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
+
+            //app.UseCookiePolicy(new CookiePolicyOptions
+            //{
+            //   // Secure = CookieSecurePolicy.Always,
+            //    MinimumSameSitePolicy = SameSiteMode.Strict
+            //});
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
@@ -61,6 +94,8 @@ namespace DI.TokenService
                 app.UseHsts();
             }
             app.UseCors("IdentityServer");
+         
+          
 
             app.UseHttpsRedirection();
             app.UseStaticFiles();
@@ -70,10 +105,7 @@ namespace DI.TokenService
             app.UseIdServer();
 
 
-            app.UseCookiePolicy(new CookiePolicyOptions
-            {
-                MinimumSameSitePolicy = SameSiteMode.Lax
-            });
+           
             //app.UseCookiePolicy(new CookiePolicyOptions
             //{
             //    HttpOnly = HttpOnlyPolicy.None,

@@ -4,6 +4,7 @@ using IdentityServer4;
 using IdentityServer4.Models;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.IdentityModel.Tokens;
 
 namespace DI.TokenService.Core
 {
@@ -61,6 +62,7 @@ namespace DI.TokenService.Core
                 {
                     IdentityServerConstants.StandardScopes.OpenId,
                     IdentityServerConstants.StandardScopes.Profile,
+                    IdentityServerConstants.StandardScopes.Email,
                     "boardsapi"
                 },
                    AllowAccessTokensViaBrowser = true
@@ -71,6 +73,34 @@ namespace DI.TokenService.Core
             builder.Services.AddSingleton<IUserRepository, UserRepository>();
             builder.AddProfileService<CustomProfileService>();
             builder.AddResourceOwnerValidator<CustomRopValidator>();
+
+
+            serviceCollection.AddAuthentication()
+                .AddOpenIdConnect("adfs", "AD authentication", options =>
+                {
+                    options.SignInScheme = IdentityServerConstants.ExternalCookieAuthenticationScheme;
+                    options.SignOutScheme = IdentityServerConstants.SignoutScheme;
+                    options.Authority = $"{configuration["ADFS:Authority"]}";
+                    options.ClientId = $"{configuration["ADFS:ClientId"]}";
+                    options.ResponseType = "id_token";
+                    options.Scope.Add("profile");
+                    options.Scope.Add("mail");
+                    options.Scope.Add("sn");
+                    options.Scope.Add("givenName");
+
+
+                    options.CallbackPath = "/signin-adfs";
+                    options.SignedOutCallbackPath = "/signout-callback-adfs";
+                    options.RemoteSignOutPath = "/signout-adfs";
+                    options.GetClaimsFromUserInfoEndpoint = true;
+                    options.TokenValidationParameters = new TokenValidationParameters
+                    {
+                        NameClaimType = "name",
+                        RoleClaimType = "role"
+                    };
+                    options.RequireHttpsMetadata = false;
+                });
+
         }
     }
 }

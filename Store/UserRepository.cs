@@ -1,4 +1,5 @@
-﻿using Dapper;
+﻿using System;
+using Dapper;
 using System.Threading.Tasks;
 using System.Linq;
 using System.Collections.Generic;
@@ -16,14 +17,47 @@ namespace DI.TokenService.Store
             _context = context;
         }
 
-        public CustomUser AutoProvisionUser(string provider, string providerUserId, List<Claim> claims)
+        private string _insUserSql = @"INSERT INTO [acl].[Users]
+                ([UserId],[PasswordHash],[SecurityStamp],[ChangePassword],[EmailConfirmed],[LockedOut],[AccessFailCount],[IsSystem],[Locked],[Disabled],[Deleted],[CreatedOn],[CreatedBy],[ModifiedOn],[ModifiedBy],[FirstName],[LastName],[Gender],[Email1])
+        VALUES (@UserId,@PasswordHash,@SecurityStamp,@ChangePassword,@EmailConfirmed,@LockedOut,@AccessFailCount,@IsSystem,@Locked,@Disabled,@Deleted,@CreatedOn,@CreatedBy,@ModifiedOn,@ModifiedBy,@FirstName,@LastName,@Gender,@Email1)";
+
+
+        public async Task<CustomUser> AutoProvisionUser(string provider, string providerUserId, List<Claim> claims)
         {
-            throw new System.NotImplementedException();
+            using var connection = _context.CreateConnection();
+            var result = await connection.ExecuteAsync(_insUserSql, new
+            {
+                @UserId=providerUserId,
+                @PasswordHash="-",
+                @SecurityStamp="-",
+                @ChangePassword=0,
+                @EmailConfirmed=0,
+                @LockedOut=1,
+                @AccessFailCount=0,
+                @IsSystem=0,
+                @Locked=0,
+                @Disabled=0,
+                @Deleted=0,
+                @CreatedOn=DateTime.Now,
+                @CreatedBy="System",
+                @ModifiedOn = DateTime.Now,
+                @ModifiedBy = "System",
+                @FirstName="Ext",
+                @LastName="User",
+                @Gender=0,
+                @Email1="qwe@d.com"
+
+            });
+
+            var newUser = await FindByExternalProvider(provider, providerUserId);
+            return newUser;
         }
 
-        public CustomUser FindByExternalProvider(string provider, string providerUserId)
+        public async Task<CustomUser> FindByExternalProvider(string provider, string providerUserId)
         {
-            throw new System.NotImplementedException();
+            using var connection = _context.CreateConnection();
+            var user = await connection.QueryFirstOrDefaultAsync<CustomUser>($"{_sql} AND usr.UserId=@Id", new { Id = providerUserId });
+            return user;
         }
 
 
