@@ -27,19 +27,19 @@ namespace DI.TokenService
         {
 
 
-            ServicePointManager.ServerCertificateValidationCallback += (sender, certificate, chain, errors) =>
-            {
-                // local dev, just approve all certs
-                return true;
-               // return errors == SslPolicyErrors.None;
-            };
+            //ServicePointManager.ServerCertificateValidationCallback += (sender, certificate, chain, errors) =>
+            //{
+            //    // local dev, just approve all certs
+            //    return true;
+            //   // return errors == SslPolicyErrors.None;
+            //};
 
-            services.AddHttpClient("HttpClientWithSSLUntrusted").ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
-            {
-                ClientCertificateOptions = ClientCertificateOption.Manual,
-                ServerCertificateCustomValidationCallback =
-                    (httpRequestMessage, cert, cetChain, policyErrors) => true
-            });
+            //services.AddHttpClient("HttpClientWithSSLUntrusted").ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
+            //{
+            //    ClientCertificateOptions = ClientCertificateOption.Manual,
+            //    ServerCertificateCustomValidationCallback =
+            //        (httpRequestMessage, cert, cetChain, policyErrors) => true
+            //});
             services.AddControllersWithViews();
 
             services.AddCors(options =>

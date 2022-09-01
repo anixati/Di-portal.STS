@@ -142,7 +142,7 @@ namespace DI.TokenService.Controllers
             // the most common claim type for that are the sub claim and the NameIdentifier
             // depending on the external provider, some other claim type might be used
             var userIdClaim = externalUser.FindFirst(JwtClaimTypes.Subject) ??
-                              externalUser.FindFirst(ClaimTypes.NameIdentifier) ??
+                              externalUser.FindFirst(ClaimTypes.Name) ??
                               throw new Exception("Unknown userid");
 
             // remove the user id claim so we don't include it as an extra claim if/when we provision the user
@@ -153,7 +153,7 @@ namespace DI.TokenService.Controllers
             var providerUserId = userIdClaim.Value;
 
             // find external user
-            var user = await _userRepo.FindByExternalProvider(provider, providerUserId);
+            var user = await _userRepo.FindByExternalProvider(provider, providerUserId, claims);
 
             return (user, provider, providerUserId, claims);
         }

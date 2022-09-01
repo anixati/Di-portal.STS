@@ -1,4 +1,7 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Security.Claims;
 using DI.TokenService.Models;
 using IdentityServer4.Models;
 using Microsoft.AspNetCore.Mvc;
@@ -18,6 +21,13 @@ namespace DI.TokenService.Core
             controller.HttpContext.Response.StatusCode = 200;
             controller.HttpContext.Response.Headers["Location"] = "";
             return controller.View(viewName, new RedirectViewModel {RedirectUrl = redirectUri});
+        }
+
+
+        public static string Get(this List<Claim> claims, string claimType)
+        {
+            return claims.Where(c => c.Type == claimType)
+                .Select(c => c.Value).SingleOrDefault();
         }
     }
 }

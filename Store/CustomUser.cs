@@ -1,4 +1,6 @@
-﻿namespace DI.TokenService.Store
+﻿using System;
+
+namespace DI.TokenService.Store
 {
     public class CustomUser
     {
@@ -7,5 +9,8 @@
         public string UserId { get; set; }
         public string DisplayName { get; set; }
         public string PasswordHash { get; set; }
+
+        public DateTime? AccessRequest { get; set; }
+        public DateTime? AccessGranted { get; set; }
     }
 }

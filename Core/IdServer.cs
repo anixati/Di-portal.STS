@@ -21,6 +21,10 @@ namespace DI.TokenService.Core
                 options.Events.RaiseFailureEvents = true;
                 options.Events.RaiseSuccessEvents = true;
                 options.EmitStaticAudienceClaim = true;
+
+
+                //options.Validation =
+
             });
             builder.AddDeveloperSigningCredential();
             builder.AddInMemoryIdentityResources(new List<IdentityResource>
@@ -76,18 +80,21 @@ namespace DI.TokenService.Core
 
 
             serviceCollection.AddAuthentication()
-                .AddOpenIdConnect("adfs", "AD authentication", options =>
+                .AddOpenIdConnect("adfs", "Login using AD", options =>
                 {
+                   // options.ProtocolValidator= 
+
                     options.SignInScheme = IdentityServerConstants.ExternalCookieAuthenticationScheme;
                     options.SignOutScheme = IdentityServerConstants.SignoutScheme;
                     options.Authority = $"{configuration["ADFS:Authority"]}";
                     options.ClientId = $"{configuration["ADFS:ClientId"]}";
+                    options.ClientSecret = $"{configuration["ADFS:Secret"]}";
                     options.ResponseType = "id_token";
                     options.Scope.Add("profile");
-                    options.Scope.Add("mail");
-                    options.Scope.Add("sn");
-                    options.Scope.Add("givenName");
+                    options.Scope.Add("email");
+                    //options.Scope.Add("allatclaims");
 
+                    options.ResponseMode = "form_post";
 
                     options.CallbackPath = "/signin-adfs";
                     options.SignedOutCallbackPath = "/signout-callback-adfs";
