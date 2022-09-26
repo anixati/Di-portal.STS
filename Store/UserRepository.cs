@@ -102,14 +102,18 @@ namespace DI.TokenService.Store
         {
             var user = await FindBySubjectId(subjectId);
             if (user == null) throw new System.Exception($"Failed to get user");
+
+            var uid = user.UserId;
+            var dpName = user.DisplayName ?? user.UserId;
+            var email = user.Email ?? "NA";
             var claims = new List<Claim>
             {
-                 new Claim("nickname", user.DisplayName),
+                new Claim("nickname", dpName),
                 new Claim(JwtClaimTypes.Subject, $"{user.Id}"),
-                  new Claim(ClaimTypes.Sid, $"{user.Id}"),
-                new Claim(JwtClaimTypes.Id, user.UserId),
-                new Claim(ClaimTypes.Email, user.Email),
-                new Claim(ClaimTypes.Name, user.DisplayName),
+                new Claim(ClaimTypes.Sid, $"{user.Id}"),
+                new Claim(JwtClaimTypes.Id,uid),
+                new Claim(ClaimTypes.Email, email),
+                new Claim(ClaimTypes.Name, dpName),
             };
 
             //role claim

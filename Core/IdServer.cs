@@ -23,6 +23,7 @@ namespace DI.TokenService.Core
                 options.EmitStaticAudienceClaim = true;
 
 
+                options.Authentication.CookieSlidingExpiration = true;
                 //options.Validation =
 
             });

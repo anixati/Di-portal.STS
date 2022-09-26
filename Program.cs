@@ -29,7 +29,7 @@ namespace DI.TokenService
             }
             catch (Exception ex)
             {
-                Log.Fatal(ex, "Failed to start Jwala");
+                Log.Fatal(ex, "Failed to start ");
             }
             finally
             {
