@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using DI.TokenService.Store;
 using IdentityServer4;
 using IdentityServer4.Models;
@@ -23,7 +24,7 @@ namespace DI.TokenService.Core
                 options.EmitStaticAudienceClaim = true;
 
 
-                options.Authentication.CookieSlidingExpiration = true;
+               // options.Authentication.CookieSlidingExpiration = true;
                 //options.Validation =
 
             });
@@ -44,16 +45,25 @@ namespace DI.TokenService.Core
 
 
             //-- clients
-
+            var ts = Convert.ToInt32(new TimeSpan(2, 0, 0).TotalSeconds);
             var clientUri = configuration["Client:ClientUri"];
             var clients = new List<Client>
             {
+
                 new Client
                 {
                     ClientId = configuration["Client:ClientId"],
                     ClientName = configuration["Client:ClientName"],
                     ClientUri =clientUri,
                     AllowedGrantTypes = GrantTypes.Implicit,
+                    AbsoluteRefreshTokenLifetime = ts,
+                    SlidingRefreshTokenLifetime = ts,
+                    RefreshTokenUsage = TokenUsage.OneTimeOnly,
+                    RefreshTokenExpiration = TokenExpiration.Sliding,
+                    AccessTokenLifetime = ts,
+                    RequirePkce = false,
+                    AllowOfflineAccess = true,
+
                     //ClientSecrets =
                     //{
                     //    new Secret("dotars".Sha256())
@@ -61,7 +71,7 @@ namespace DI.TokenService.Core
                     RequireConsent=false,
                     RequireClientSecret = false,
                     RedirectUris = { $"{clientUri}/{configuration["Client:RedirectUri"]}" },
-                    PostLogoutRedirectUris = { $"{clientUri}/{configuration["Client:PostLogoutRedirectUri"]}" },
+                    //PostLogoutRedirectUris = { $"{clientUri}/{configuration["Client:PostLogoutRedirectUri"]}" },
                     AllowedCorsOrigins = {clientUri},
                     AllowedScopes = new List<string>
                 {
@@ -83,7 +93,7 @@ namespace DI.TokenService.Core
             serviceCollection.AddAuthentication()
                 .AddOpenIdConnect("adfs", "Login using AD", options =>
                 {
-                   // options.ProtocolValidator= 
+                    // options.ProtocolValidator= 
 
                     options.SignInScheme = IdentityServerConstants.ExternalCookieAuthenticationScheme;
                     options.SignOutScheme = IdentityServerConstants.SignoutScheme;

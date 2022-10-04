@@ -12,7 +12,7 @@
       {
         "Name": "File",
         "Args": {
-          "path": "\\Logs\\log-sts.log",
+          "path": "C:\\Temp\\Logs\\log-sts.log",
           "outputTemplate": "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level}] [{SourceContext}] [{EventId}] {Message}{NewLine}{Exception}",
           "rollOnFileSizeLimit": true,
           "fileSizeLimitBytes": 4194304,

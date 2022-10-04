@@ -65,14 +65,14 @@ namespace DI.TokenService
                 .ConfigureWebHostDefaults(webBuilder =>
                 {
 #if DEBUG
-                    webBuilder.ConfigureKestrel(options =>
-                    {
-                        options.Listen(IPAddress.Any, 5001, listenOptions =>
-                        {
-                            listenOptions.Protocols = HttpProtocols.Http1AndHttp2;
-                            listenOptions.UseHttps(@"C:\Temp\Certs\akdev.pfx", "Welcome1");
-                        });
-                    });
+                    //webBuilder.ConfigureKestrel(options =>
+                    //{
+                    //    options.Listen(IPAddress.Any, 5001, listenOptions =>
+                    //    {
+                    //        listenOptions.Protocols = HttpProtocols.Http1AndHttp2;
+                    //        listenOptions.UseHttps(@"C:\Temp\Certs\akdev.pfx", "Welcome1");
+                    //    });
+                    //});
 #endif
 
                     webBuilder.UseStartup<Startup>();
