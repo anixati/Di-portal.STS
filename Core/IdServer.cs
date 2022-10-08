@@ -1,8 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Security.Claims;
+using System.Threading.Tasks;
 using DI.TokenService.Store;
 using IdentityServer4;
 using IdentityServer4.Models;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
@@ -22,11 +26,6 @@ namespace DI.TokenService.Core
                 options.Events.RaiseFailureEvents = true;
                 options.Events.RaiseSuccessEvents = true;
                 options.EmitStaticAudienceClaim = true;
-
-
-               // options.Authentication.CookieSlidingExpiration = true;
-                //options.Validation =
-
             });
             builder.AddDeveloperSigningCredential();
             builder.AddInMemoryIdentityResources(new List<IdentityResource>
@@ -91,22 +90,25 @@ namespace DI.TokenService.Core
 
 
             serviceCollection.AddAuthentication()
-                .AddOpenIdConnect("adfs", "Login using AD", options =>
-                {
-                    // options.ProtocolValidator= 
+                .AddWsFederation("WsFederation","Single sign on", options => {
 
                     options.SignInScheme = IdentityServerConstants.ExternalCookieAuthenticationScheme;
+
+                    options.Wtrealm = $"{configuration["ADFS3:Realm"]}";
+                    options.MetadataAddress = $"{configuration["ADFS3:Authority"]}/FederationMetadata/2007-06/FederationMetadata.xml";
+                   options.Events.OnTicketReceived += OnTicketReceived;
+                })
+                .AddOpenIdConnect("adfs", "Login using AD", options =>
+                {
+                    options.SignInScheme = IdentityServerConstants.ExternalCookieAuthenticationScheme;
                     options.SignOutScheme = IdentityServerConstants.SignoutScheme;
-                    options.Authority = $"{configuration["ADFS:Authority"]}";
-                    options.ClientId = $"{configuration["ADFS:ClientId"]}";
-                    options.ClientSecret = $"{configuration["ADFS:Secret"]}";
+                    options.Authority = $"{configuration["ADFS4:Authority"]}";
+                    options.ClientId = $"{configuration["ADFS4:ClientId"]}";
+                    options.ClientSecret = $"{configuration["ADFS4:Secret"]}";
                     options.ResponseType = "id_token";
                     options.Scope.Add("profile");
                     options.Scope.Add("email");
-                    //options.Scope.Add("allatclaims");
-
                     options.ResponseMode = "form_post";
-
                     options.CallbackPath = "/signin-adfs";
                     options.SignedOutCallbackPath = "/signout-callback-adfs";
                     options.RemoteSignOutPath = "/signout-adfs";
@@ -119,6 +121,19 @@ namespace DI.TokenService.Core
                     options.RequireHttpsMetadata = false;
                 });
 
+
+
+
         }
+
+
+        private async static Task OnTicketReceived(TicketReceivedContext ticketReceivedContext)
+        {
+            await Task.Delay(0);
+            var identity = ticketReceivedContext.Principal.Identities.First();
+            identity.AddClaim(new Claim("sub", ticketReceivedContext.Principal.FindFirstValue("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier")));
+
+        }
+
     }
 }
