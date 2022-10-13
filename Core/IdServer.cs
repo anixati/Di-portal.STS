@@ -98,28 +98,29 @@ namespace DI.TokenService.Core
                     options.MetadataAddress = $"{configuration["ADFS3:Authority"]}/FederationMetadata/2007-06/FederationMetadata.xml";
                    options.Events.OnTicketReceived += OnTicketReceived;
                 })
-                .AddOpenIdConnect("adfs", "Login using AD", options =>
-                {
-                    options.SignInScheme = IdentityServerConstants.ExternalCookieAuthenticationScheme;
-                    options.SignOutScheme = IdentityServerConstants.SignoutScheme;
-                    options.Authority = $"{configuration["ADFS4:Authority"]}";
-                    options.ClientId = $"{configuration["ADFS4:ClientId"]}";
-                    options.ClientSecret = $"{configuration["ADFS4:Secret"]}";
-                    options.ResponseType = "id_token";
-                    options.Scope.Add("profile");
-                    options.Scope.Add("email");
-                    options.ResponseMode = "form_post";
-                    options.CallbackPath = "/signin-adfs";
-                    options.SignedOutCallbackPath = "/signout-callback-adfs";
-                    options.RemoteSignOutPath = "/signout-adfs";
-                    options.GetClaimsFromUserInfoEndpoint = true;
-                    options.TokenValidationParameters = new TokenValidationParameters
-                    {
-                        NameClaimType = "name",
-                        RoleClaimType = "role"
-                    };
-                    options.RequireHttpsMetadata = false;
-                });
+                //.AddOpenIdConnect("adfs", "Login using AD", options =>
+                //{
+                //    options.SignInScheme = IdentityServerConstants.ExternalCookieAuthenticationScheme;
+                //    options.SignOutScheme = IdentityServerConstants.SignoutScheme;
+                //    options.Authority = $"{configuration["ADFS4:Authority"]}";
+                //    options.ClientId = $"{configuration["ADFS4:ClientId"]}";
+                //    options.ClientSecret = $"{configuration["ADFS4:Secret"]}";
+                //    options.ResponseType = "id_token";
+                //    options.Scope.Add("profile");
+                //    options.Scope.Add("email");
+                //    options.ResponseMode = "form_post";
+                //    options.CallbackPath = "/signin-adfs";
+                //    options.SignedOutCallbackPath = "/signout-callback-adfs";
+                //    options.RemoteSignOutPath = "/signout-adfs";
+                //    options.GetClaimsFromUserInfoEndpoint = true;
+                //    options.TokenValidationParameters = new TokenValidationParameters
+                //    {
+                //        NameClaimType = "name",
+                //        RoleClaimType = "role"
+                //    };
+                //    options.RequireHttpsMetadata = false;
+                //})
+                ;
 
 
 
